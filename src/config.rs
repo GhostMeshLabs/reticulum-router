@@ -58,6 +58,7 @@ pub enum InterfaceConfig {
         enabled: bool,
         target_host: String,
         target_port: u16,
+        #[serde(default)]
         transport_identity: String,
     },
     UDPInterface {
