@@ -7,11 +7,18 @@ use reticulum::iface::tcp_client::TcpClient;
 use reticulum::iface::tcp_server::TcpServer;
 use reticulum::iface::udp::UdpInterface;
 use reticulum::transport::{Transport, TransportConfig};
+use std::fs::{self, OpenOptions};
+use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use tokio::signal;
+
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
+
+const IDENTITY_FILE_NAME: &str = "identity";
 
 struct Daemon {
     transport: Transport,
-    config_path: std::path::PathBuf,
 }
 
 impl Daemon {
@@ -25,7 +32,7 @@ impl Daemon {
         log::info!("Reticulum daemon starting");
         log::info!("Configuration loaded from: {}", config_path.display());
 
-        let identity = PrivateIdentity::new_from_rand(OsRng);
+        let identity = load_or_create_identity(&config_path)?;
         let transport = Transport::new({
             let mut cfg = TransportConfig::new(
                 "reticulum-router",
@@ -106,10 +113,7 @@ impl Daemon {
         }
     }
 
-        Ok(Self {
-            transport,
-            config_path,
-        })
+        Ok(Self { transport })
     }
 
     async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
@@ -124,8 +128,108 @@ impl Daemon {
     }
 }
 
+fn load_or_create_identity(config_path: &Path) -> Result<PrivateIdentity, Box<dyn std::error::Error>> {
+    let identity_path = identity_path(config_path);
+    if identity_path.exists() {
+        let identity_hex = fs::read_to_string(&identity_path)?;
+        let identity =
+            PrivateIdentity::new_from_hex_string(identity_hex.trim()).map_err(|err| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!(
+                        "failed to parse identity at {}: {err:?}",
+                        identity_path.display()
+                    ),
+                )
+            })?;
+
+        log::info!("Loaded Reticulum identity from {}", identity_path.display());
+        return Ok(identity);
+    }
+
+    let identity = PrivateIdentity::new_from_rand(OsRng);
+    save_identity(&identity_path, &identity)?;
+    log::info!(
+        "Generated new Reticulum identity at {}",
+        identity_path.display()
+    );
+
+    Ok(identity)
+}
+
+fn identity_path(config_path: &Path) -> PathBuf {
+    config_path.join(IDENTITY_FILE_NAME)
+}
+
+fn save_identity(path: &Path, identity: &PrivateIdentity) -> io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let identity_hex = format!("{}\n", identity.to_hex_string());
+
+    #[cfg(unix)]
+    {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(path)?;
+        file.write_all(identity_hex.as_bytes())?;
+        file.sync_all()?;
+    }
+
+    #[cfg(not(unix))]
+    {
+        fs::write(path, identity_hex)?;
+    }
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let daemon = Daemon::new().await?;
     daemon.run().await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{identity_path, load_or_create_identity};
+    use std::fs;
+    use std::path::PathBuf;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn creates_and_reuses_identity_file() {
+        let config_dir = unique_test_dir();
+        fs::create_dir_all(&config_dir).expect("config dir");
+
+        let first_identity = load_or_create_identity(&config_dir).expect("generated identity");
+        let saved_identity =
+            fs::read_to_string(identity_path(&config_dir)).expect("saved identity");
+
+        assert_eq!(saved_identity.trim(), first_identity.to_hex_string());
+
+        let second_identity = load_or_create_identity(&config_dir).expect("loaded identity");
+        assert_eq!(
+            second_identity.to_hex_string(),
+            first_identity.to_hex_string()
+        );
+
+        fs::remove_dir_all(&config_dir).expect("cleanup");
+    }
+
+    fn unique_test_dir() -> PathBuf {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("valid timestamp")
+            .as_nanos();
+
+        std::env::temp_dir().join(format!(
+            "reticulum-router-identity-test-{}-{}",
+            std::process::id(),
+            timestamp
+        ))
+    }
 }
