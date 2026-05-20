@@ -259,6 +259,8 @@ impl Config {
         let mut paths = vec![];
 
         if let Some(home) = dirs::home_dir() {
+            #[cfg(target_os="haiku")]
+            paths.push(home.join("config/settings/reticulum"));
             paths.push(home.join(".config/reticulum"));
             paths.push(home.join(".reticulum"));
         }
@@ -275,6 +277,11 @@ impl Config {
     }
 
     pub fn default_path() -> PathBuf {
+        if cfg!(target_os="haiku") {
+            return dirs::home_dir()
+                .expect("home directory")
+                .join("config/settings/reticulum")
+        }
         dirs::home_dir()
             .expect("home directory")
             .join(".config/reticulum")
