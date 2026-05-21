@@ -2,4 +2,51 @@
 
 <img src="docs/logo.png" width=256>
 
-A rust-based router for the Reticulum network based largely on [Reticulum-rs](https://github.com/BeechatNetworkSystemsLtd/Reticulum-rs)
+A pure, rust-based router for the Reticulum network based largely on [Reticulum-rs](https://github.com/BeechatNetworkSystemsLtd/Reticulum-rs)
+
+> LXMF services are not part of this project! This is strictly a Reticulum transport. LXMF messages will flow over the transport as expected however.
+
+## Configuring
+
+The Reticulum Router Daemon will automatically convert any existing non-standard Python rnsd configurations to standard toml config files.
+
+> Not all interface types are supported yet! Just TCPServerInterface,TCPClientInterface,UDPInterface
+
+### Example Syntax
+
+```toml
+[reticulum]
+enable_transport = true
+share_instance = true
+instance_name = "default"
+discover_interfaces = true
+
+[logging]
+loglevel = 5
+
+[[interfaces]]
+name = "Default Interface"
+type = "AutoInterface"
+enabled = false
+
+[[interfaces]]
+name = "Local"
+type = "TCPServerInterface"
+enabled = true
+bind_host = "0.0.0.0"
+bind_port = 4242
+
+[[interfaces]]
+name = "GhostMesh 👻 ATX (IPv4,IPv6,LoRA)"
+type = "TCPClientInterface"
+enabled = true
+target_host = "rns.atx.ghostmesh.net"
+target_port = 4242
+
+[[interfaces]]
+name = "GhostMesh 👻 ATL (IPv6)"
+type = "TCPClientInterface"
+enabled = true
+target_host = "rns.atl.ghostmesh.net"
+target_port = 4242
+```
