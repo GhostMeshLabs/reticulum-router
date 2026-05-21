@@ -1,10 +1,12 @@
 ENGINE=?podman
-REPO=codeberg.io/kallisti5
+REPO=ghcr.io/ghostmeshlabs
 TAG=latest
 
 default:
-	podman build . -t $(REPO)/reticulum-router:$(TAG)
+	podman manifest rm $(REPO)/reticulum-router:$(TAG) || true
+	podman manifest create $(REPO)/reticulum-router:$(TAG)
+	podman build --platform linux/amd64,linux/arm64 --manifest $(REPO)/reticulum-router:$(TAG) .
 test:
 	podman run $(REPO)/reticulum-router:$(TAG)
 push:
-	podman push $(REPO)/reticulum-router:$(TAG)
+	podman manifest push $(REPO)/reticulum-router:$(TAG)
