@@ -20,6 +20,13 @@ Resizable MTU's are a part of rnsd, however [not yet implemented](https://github
 We have expanded the maximum MTU supported to improve the situation and reduce communication failures until a
 well-rounded adjustable MTU can be implemented in Reticulum-rs.
 
+## Implemented Transport Destinations
+
+* ✅ rnstransport path.request
+* ❌ rnstransport probe (aka respond_to_probes)
+* ❌ rnstransport remote.management (aka enable_remote_management)
+* ❌ info blackhole (aka publish_blackhole)
+
 # Configuring
 
 The Reticulum Router Daemon will automatically convert any existing non-standard Python rnsd configurations to standard toml config files.
