@@ -40,6 +40,7 @@ impl Daemon {
                 config.reticulum.enable_transport,
             );
             cfg.set_retransmit(config.reticulum.enable_transport);
+            cfg.set_respond_to_probes(config.reticulum.respond_to_probes);
             cfg
         });
 

@@ -23,7 +23,7 @@ well-rounded adjustable MTU can be implemented in Reticulum-rs.
 ## Implemented Transport Destinations
 
 * ✅ rnstransport path.request
-* ❌ rnstransport probe (aka respond_to_probes)
+* ✅ rnstransport probe (aka respond_to_probes)
 * ❌ rnstransport remote.management (aka enable_remote_management)
 * ❌ info blackhole (aka publish_blackhole)
 
@@ -41,6 +41,7 @@ enable_transport = true
 share_instance = true
 instance_name = "default"
 discover_interfaces = true
+respond_to_probes = true
 
 [logging]
 loglevel = 5

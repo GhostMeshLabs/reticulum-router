@@ -27,6 +27,8 @@ pub struct ReticulumConfig {
     pub panic_on_interface_error: bool,
     #[serde(default)]
     pub instance_name: Option<String>,
+    #[serde(default = "default_false")]
+    pub respond_to_probes: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -165,6 +167,7 @@ fn quote_if_needed(line: &str, key: &str) -> String {
 }
 
 fn default_true() -> bool { true }
+fn default_false() -> bool { false }
 fn default_shared_port() -> u16 { 37428 }
 fn default_control_port() -> u16 { 37429 }
 fn default_loglevel() -> u8 { 4 }
@@ -178,6 +181,7 @@ impl Default for ReticulumConfig {
             instance_control_port: 37429,
             panic_on_interface_error: false,
             instance_name: None,
+            respond_to_probes: false,
         }
     }
 }

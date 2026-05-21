@@ -993,7 +993,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 [[package]]
 name = "reticulum"
 version = "0.1.0"
-source = "git+https://github.com/GhostMeshLabs/reticulum-rs.git#d7603b86a4004498518d9bede390df02908fbff9"
+source = "git+https://github.com/GhostMeshLabs/reticulum-rs.git?rev=be71ae3d94b3775f0b274635cb9137b64cf23790#be71ae3d94b3775f0b274635cb9137b64cf23790"
 dependencies = [
  "aes",
  "cbc",
@@ -1107,9 +1107,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.149"
+version = "1.0.150"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+checksum = "e8014e44b4736ed0538adeecded0fce2a272f22dc9578a7eb6b2d9993c74cfb9"
 dependencies = [
  "itoa",
  "memchr",
