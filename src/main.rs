@@ -1,7 +1,7 @@
 mod config;
 
 use config::{Config, InterfaceConfig};
-use rand_core::OsRng;
+use rand::rngs::OsRng;
 use reticulum::identity::PrivateIdentity;
 use reticulum::iface::tcp_client::TcpClient;
 use reticulum::iface::tcp_server::TcpServer;
@@ -142,16 +142,15 @@ fn load_or_create_identity(config_path: &Path) -> Result<PrivateIdentity, Box<dy
                     ),
                 )
             })?;
-
-        log::info!("Loaded Reticulum identity from {}", identity_path.display());
+        log::info!("Loaded Reticulum identity {} from {}", identity.address_hash(), identity_path.display());
         return Ok(identity);
     }
 
     let identity = PrivateIdentity::new_from_rand(OsRng);
     save_identity(&identity_path, &identity)?;
     log::info!(
-        "Generated new Reticulum identity at {}",
-        identity_path.display()
+        "Generated new Reticulum identity {} at {}",
+        identity.address_hash(), identity_path.display()
     );
 
     Ok(identity)
