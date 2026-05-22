@@ -21,4 +21,4 @@ env_logger = "0.10"
 # Core Reticulum Implementation
 #reticulum = "0.1.0"
 ## Fixes for several bugs which have been submitted upstream
-reticulum = { git = "https://github.com/GhostMeshLabs/reticulum-rs.git", rev = "5cf8395ad834fefb38310ec1f30ef9f017f22f1d" }
+reticulum = { git = "https://github.com/GhostMeshLabs/reticulum-rs.git", rev = "38b7b6a4691ad0d4131a5da1a5349dfecad8052e" }
