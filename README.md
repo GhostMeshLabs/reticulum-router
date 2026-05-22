@@ -24,6 +24,7 @@ well-rounded adjustable MTU can be implemented in Reticulum-rs.
 
 * ✅ rnstransport path.request
 * ✅ rnstransport probe (aka respond_to_probes)
+* ✅ rnstransport discovery (aka discoverable)
 * ❌ rnstransport remote.management (aka enable_remote_management)
 * ❌ info blackhole (aka publish_blackhole)
 
@@ -33,6 +34,15 @@ The Reticulum Router Daemon will automatically convert any existing non-standard
 
 > Not all interface types are supported yet! Just TCPServerInterface,TCPClientInterface,UDPInterface
 
+## Differences from rnsd configuration
+
+* discovery_name
+  * Omitted. We just use interface name
+* reachable_on
+  * We *DO* optionally want a port number, because sometimes things are behind load balancers
+  * Does *NOT* accept a local script to execute to get your IP
+    * (in the future, we want to detect your external IP if reachable_on is omitted)
+
 ## Example Syntax
 
 ```toml
@@ -40,7 +50,6 @@ The Reticulum Router Daemon will automatically convert any existing non-standard
 enable_transport = true
 share_instance = true
 instance_name = "default"
-discover_interfaces = true
 respond_to_probes = true
 
 [logging]
@@ -57,6 +66,8 @@ type = "TCPServerInterface"
 enabled = true
 bind_host = "0.0.0.0"
 bind_port = 4242
+discoverable = true
+reachable_on = "cool.server.com:4242"
 
 [[interfaces]]
 name = "GhostMesh 👻 ATX (IPv4,IPv6,LoRA)"

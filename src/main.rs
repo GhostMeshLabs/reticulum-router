@@ -6,16 +6,47 @@ use reticulum::identity::PrivateIdentity;
 use reticulum::iface::tcp_client::TcpClient;
 use reticulum::iface::tcp_server::TcpServer;
 use reticulum::iface::udp::UdpInterface;
-use reticulum::transport::{Transport, TransportConfig};
+use reticulum::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::net::SocketAddr;
 use tokio::signal;
 
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
 
 const IDENTITY_FILE_NAME: &str = "identity";
+
+fn split_host_port(input: &str) -> Result<(String, u16), String> {
+    if input.is_empty() {
+        return Err("empty address".into());
+    }
+
+    // Handles:
+    // - 127.0.0.1:443
+    // - [2001:db8::1]:443
+    if let Ok(addr) = input.parse::<SocketAddr>() {
+        return Ok((addr.ip().to_string(), addr.port()));
+    }
+
+    // Handles:
+    // - google.com:443
+    // - localhost:8080
+    if let Some((host, port_str)) = input.rsplit_once(':') {
+        if host.is_empty() {
+            return Err("missing host".into());
+        }
+
+        let port = port_str
+            .parse::<u16>()
+            .map_err(|_| "invalid port".to_string())?;
+
+        return Ok((host.to_string(), port));
+    }
+
+    Err("missing port".into())
+}
 
 struct Daemon {
     transport: Transport,
@@ -68,10 +99,21 @@ impl Daemon {
             InterfaceConfig::TCPServerInterface { bind_host, bind_port, .. } => {
                 let addr = format!("{}:{}", bind_host, bind_port);
                 log::info!("Enabling interface '{}': TCP Server on {}", iface.name, addr);
-                iface_manager.lock().await.spawn(
+                let iface_addr = iface_manager.lock().await.spawn(
                     TcpServer::new(addr, iface_manager.clone()),
                     TcpServer::spawn,
                 );
+                if iface.discoverable {
+                    // XXX: If reachable_on is None, we should check external IP somehow
+                    let (reachable_host, reachable_port) = match iface.reachable_on {
+                        Some(addr) => split_host_port(&addr)?,
+                        None => (bind_host, bind_port),
+                    };
+                    transport.register_discoverable_interface(
+                        iface_addr,
+                        DiscoveryInterfaceConfig::tcp_server(iface.name, reachable_host, reachable_port),
+                    ).await;
+                }
             }
             InterfaceConfig::TCPClientInterface { target_host, target_port, .. } => {
                 let addr = format!("{}:{}", target_host, target_port);
@@ -90,6 +132,7 @@ impl Daemon {
                     UdpInterface::spawn,
                 );
             }
+
             InterfaceConfig::AutoInterface { .. } => {
                 log::warn!("Interface '{}' type 'AutoInterface' is not yet supported", iface.name);
             }

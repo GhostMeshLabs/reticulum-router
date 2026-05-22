@@ -40,6 +40,12 @@ pub struct LoggingConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NamedInterface {
     pub name: String,
+    #[serde(default = "default_false")]
+    pub discoverable: bool,
+    pub reachable_on: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+    pub height: Option<i32>,
     #[serde(flatten)]
     pub config: InterfaceConfig,
 }
@@ -347,6 +353,11 @@ impl Config {
             interfaces: vec![
                 NamedInterface {
                     name: "Default TCP Server Interface".to_string(),
+                    discoverable: false,
+                    reachable_on: None,
+                    latitude: None,
+                    longitude: None,
+                    height: None,
                     config: InterfaceConfig::TCPServerInterface {
                         enabled: true,
                         bind_host: "127.0.0.1".to_string(),
