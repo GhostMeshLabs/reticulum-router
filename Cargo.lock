@@ -993,6 +993,7 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 [[package]]
 name = "reticulum"
 version = "0.1.0"
+source = "git+https://github.com/GhostMeshLabs/reticulum-rs.git?rev=a17701d690ae9e1bbae8b839405de46488c06ae3#a17701d690ae9e1bbae8b839405de46488c06ae3"
 dependencies = [
  "aes",
  "cbc",
@@ -1018,7 +1019,7 @@ dependencies = [
 
 [[package]]
 name = "reticulum-router"
-version = "0.3.2"
+version = "1.0.0"
 dependencies = [
  "dirs",
  "env_logger",
