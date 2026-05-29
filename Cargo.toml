@@ -1,6 +1,6 @@
 [package]
 name = "reticulum-router"
-version = "0.3.2"
+version = "1.0.0"
 edition = "2024"
 
 [dependencies]
@@ -20,5 +20,5 @@ env_logger = "0.10"
 
 # Core Reticulum Implementation
 #reticulum = "0.1.0"
-## Fixes for several bugs which have been submitted upstream
-reticulum = { git = "https://github.com/GhostMeshLabs/reticulum-rs.git", rev = "812276e8a18084ebc2635e0da451d580efd47800" }
+## Fixes for several major bugs which have been submitted upstream
+reticulum = { git = "https://github.com/GhostMeshLabs/reticulum-rs.git", rev = "a17701d690ae9e1bbae8b839405de46488c06ae3" }

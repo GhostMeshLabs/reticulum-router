@@ -1,6 +1,6 @@
 ENGINE=?podman
 REPO=ghcr.io/ghostmeshlabs
-TAG=latest
+TAG=`cat VERSION`
 
 default:
 	podman manifest rm $(REPO)/reticulum-router:$(TAG) || true
