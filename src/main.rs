@@ -2,11 +2,11 @@ mod config;
 
 use config::{Config, InterfaceConfig};
 use rand::rngs::OsRng;
-use reticulum::identity::PrivateIdentity;
-use reticulum::iface::tcp_client::TcpClient;
-use reticulum::iface::tcp_server::TcpServer;
-use reticulum::iface::udp::UdpInterface;
-use reticulum::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
+use reticulum_sdk::identity::PrivateIdentity;
+use reticulum_sdk::iface::tcp_client::TcpClient;
+use reticulum_sdk::iface::tcp_server::TcpServer;
+use reticulum_sdk::iface::udp::UdpInterface;
+use reticulum_sdk::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
