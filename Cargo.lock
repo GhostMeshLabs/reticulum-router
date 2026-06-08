@@ -1142,7 +1142,6 @@ dependencies = [
 [[package]]
 name = "reticulum-sdk"
 version = "1.0.6"
-source = "git+https://github.com/GhostMeshLabs/reticulum-sdk.git?rev=96fdbf8eaeeec8e4751e498a5da5d4c783751cd6#96fdbf8eaeeec8e4751e498a5da5d4c783751cd6"
 dependencies = [
  "aes",
  "cbc",
