@@ -29,6 +29,8 @@ pub struct ReticulumConfig {
     pub instance_name: Option<String>,
     #[serde(default = "default_false")]
     pub respond_to_probes: bool,
+    #[serde(default)]
+    pub rpc_key: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,9 +45,9 @@ pub struct NamedInterface {
     #[serde(default = "default_false")]
     pub discoverable: bool,
     pub reachable_on: Option<String>,
-    pub latitude: Option<f32>,
-    pub longitude: Option<f32>,
-    pub height: Option<i32>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
+    pub height: Option<f64>,
     #[serde(flatten)]
     pub config: InterfaceConfig,
 }
@@ -185,8 +187,9 @@ impl Default for ReticulumConfig {
             share_instance: false,
             shared_instance_port: 37428,
             instance_control_port: 37429,
-            panic_on_interface_error: false,
             instance_name: None,
+            rpc_key: None,
+            panic_on_interface_error: false,
             respond_to_probes: false,
         }
     }

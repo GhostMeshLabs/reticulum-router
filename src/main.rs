@@ -6,6 +6,7 @@ use reticulum_sdk::identity::PrivateIdentity;
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
 use reticulum_sdk::iface::udp::UdpInterface;
+use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
@@ -70,7 +71,21 @@ impl Daemon {
                 &identity,
                 config.reticulum.enable_transport,
             );
+
+            // RPC for local instance sharing
+			cfg.set_share_instance(config.reticulum.share_instance);
+			match config.reticulum.rpc_key {
+				Some(key) => {
+					log::trace!("Loading RPC key securing shared instance.");
+					cfg.set_rpc_key_hex(&key)?;
+				},
+				None => {},
+			}
+
+            // Transport
             cfg.set_retransmit(config.reticulum.enable_transport);
+
+            // Destinations
             cfg.set_respond_to_probes(config.reticulum.respond_to_probes);
             cfg
         });
@@ -109,10 +124,11 @@ impl Daemon {
                         Some(addr) => split_host_port(&addr)?,
                         None => (bind_host, bind_port),
                     };
-                    transport.register_discoverable_interface(
-                        iface_addr,
-                        DiscoveryInterfaceConfig::tcp_server(iface.name, reachable_host, reachable_port),
-                    ).await;
+                    let mut discovery_config = DiscoveryInterfaceConfig::tcp_server(iface.name, reachable_host, reachable_port);
+                    discovery_config.height = iface.height;
+                    discovery_config.latitude = iface.latitude;
+                    discovery_config.longitude = iface.longitude;
+                    transport.register_discoverable_interface(iface_addr, discovery_config).await;
                 }
             }
             InterfaceConfig::TCPClientInterface { target_host, target_port, .. } => {
@@ -133,14 +149,22 @@ impl Daemon {
                 );
             }
 
+            InterfaceConfig::RNodeInterface { port, frequency, bandwidth, txpower, spreadingfactor, codingrate, flow_control, .. } => {
+                log::info!("Enabling interface '{}': RNode {} ({},{},{},{})", iface.name, port, frequency, bandwidth, spreadingfactor, codingrate);
+				let rnode_config = RNodeConfig::new(port, frequency, bandwidth, txpower, spreadingfactor, codingrate);
+				//rnode_config.with_flow_control(flow_control);
+				rnode_config.validate()?;
+				iface_manager.lock().await.spawn(
+					RNodeInterface::new(rnode_config),
+					RNodeInterface::spawn,
+				);
+            }
+
             InterfaceConfig::AutoInterface { .. } => {
                 log::warn!("Interface '{}' type 'AutoInterface' is not yet supported", iface.name);
             }
             InterfaceConfig::I2PInterface { .. } => {
                 log::warn!("Interface '{}' type 'I2PInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::RNodeInterface { .. } => {
-                log::warn!("Interface '{}' type 'RNodeInterface' is not yet supported", iface.name);
             }
             InterfaceConfig::BLEInterface { .. } => {
                 log::warn!("Interface '{}' type 'BLEInterface' is not yet supported", iface.name);
