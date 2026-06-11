@@ -19,5 +19,5 @@ log = "0.4"
 env_logger = "0.10"
 
 # Core Reticulum Implementation
-#reticulum-sdk = "0.1.0"
-reticulum-sdk = { git = "https://github.com/GhostMeshLabs/reticulum-sdk.git", rev = "c1c51bfeab33bc811af0743bc41b4b9a6c2f0162" }
+#reticulum-sdk = { path = "../reticulum-sdk" }
+reticulum-sdk = { git = "https://github.com/GhostMeshLabs/reticulum-sdk.git", rev = "cb7b6d70e0448a48d791795039b46f380c5110ed" }
