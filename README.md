@@ -2,7 +2,7 @@
 
 <img src="docs/logo.png" width=256>
 
-A pure, rust-based transport for the Reticulum network based largely on [Reticulum-rs](https://github.com/BeechatNetworkSystemsLtd/Reticulum-rs)
+A pure, rust-based transport for the Reticulum network based largely on [reticulum-sdk](https://github.com/GhostMeshLabs/reticulum-sdk)
 
 # Limitations
 
@@ -12,13 +12,6 @@ The original Python implementation of rnsd stuffs a bunch of add-on services beh
 [LXMF services](https://github.com/markqvist/lxmf) are not part of this project! This is strictly a Reticulum protocol transport.
 
 Application messages such as LXMF and NomadNetwork will flow over the transport as expected.
-
-## MTU
-
-Resizable MTU's are a part of rnsd, however [not yet implemented](https://github.com/BeechatNetworkSystemsLtd/Reticulum-rs/issues/92) in Reticulum-rs resulting in errors.
-
-We have expanded the maximum MTU supported to improve the situation and reduce communication failures until a
-well-rounded adjustable MTU can be implemented in Reticulum-rs.
 
 ## Implemented Transport Destinations
 
@@ -32,7 +25,7 @@ well-rounded adjustable MTU can be implemented in Reticulum-rs.
 
 The Reticulum Router Daemon will automatically convert any existing non-standard Python rnsd configurations to standard toml config files.
 
-> Not all interface types are supported yet! Just TCPServerInterface,TCPClientInterface,UDPInterface
+> Not all interface types are supported yet! Just TCPServerInterface,TCPClientInterface,UDPInterface,RNodeInterface
 
 ## Differences from rnsd configuration
 
