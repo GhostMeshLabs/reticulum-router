@@ -3,15 +3,15 @@ mod config;
 use config::{Config, InterfaceConfig};
 use rand::rngs::OsRng;
 use reticulum_sdk::identity::PrivateIdentity;
+use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
 use reticulum_sdk::iface::udp::UdpInterface;
-use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 use tokio::signal;
 
 #[cfg(unix)]
@@ -58,8 +58,9 @@ impl Daemon {
         let (config, config_path) = Config::load()?;
 
         env_logger::Builder::from_env(
-            env_logger::Env::default().default_filter_or(config.log_filter())
-        ).init();
+            env_logger::Env::default().default_filter_or(config.log_filter()),
+        )
+        .init();
 
         log::info!("Reticulum daemon starting");
         log::info!("Configuration loaded from: {}", config_path.display());
@@ -73,14 +74,14 @@ impl Daemon {
             );
 
             // RPC for local instance sharing
-			cfg.set_share_instance(config.reticulum.share_instance);
-			match config.reticulum.rpc_key {
-				Some(key) => {
-					log::trace!("Loading RPC key securing shared instance.");
-					cfg.set_rpc_key_hex(&key)?;
-				},
-				None => {},
-			}
+            cfg.set_share_instance(config.reticulum.share_instance);
+            match config.reticulum.rpc_key {
+                Some(key) => {
+                    log::trace!("Loading RPC key securing shared instance.");
+                    cfg.set_rpc_key_hex(&key)?;
+                }
+                None => {}
+            }
 
             // Transport
             cfg.set_retransmit(config.reticulum.enable_transport);
@@ -92,111 +93,185 @@ impl Daemon {
 
         let iface_manager = transport.iface_manager();
 
-    for iface in config.interfaces {
-        let enabled = match &iface.config {
-            InterfaceConfig::TCPServerInterface { enabled, .. } => *enabled,
-            InterfaceConfig::TCPClientInterface { enabled, .. } => *enabled,
-            InterfaceConfig::UDPInterface { enabled, .. } => *enabled,
-            InterfaceConfig::AutoInterface { enabled, .. } => *enabled,
-            InterfaceConfig::I2PInterface { enabled, .. } => *enabled,
-            InterfaceConfig::RNodeInterface { enabled, .. } => *enabled,
-            InterfaceConfig::BLEInterface { enabled, .. } => *enabled,
-            InterfaceConfig::KISSInterface { enabled, .. } => *enabled,
-            InterfaceConfig::AX25KISSInterface { enabled, .. } => *enabled,
-            InterfaceConfig::Unsupported => false,
-        };
-    
-        if !enabled {
-            continue;
-        }
+        for iface in config.interfaces {
+            let enabled = match &iface.config {
+                InterfaceConfig::TCPServerInterface { enabled, .. } => *enabled,
+                InterfaceConfig::TCPClientInterface { enabled, .. } => *enabled,
+                InterfaceConfig::UDPInterface { enabled, .. } => *enabled,
+                InterfaceConfig::AutoInterface { enabled, .. } => *enabled,
+                InterfaceConfig::I2PInterface { enabled, .. } => *enabled,
+                InterfaceConfig::RNodeInterface { enabled, .. } => *enabled,
+                InterfaceConfig::BLEInterface { enabled, .. } => *enabled,
+                InterfaceConfig::KISSInterface { enabled, .. } => *enabled,
+                InterfaceConfig::AX25KISSInterface { enabled, .. } => *enabled,
+                InterfaceConfig::Unsupported => false,
+            };
 
-        match iface.config {
-            InterfaceConfig::TCPServerInterface { bind_host, bind_port, .. } => {
-                let addr = format!("{}:{}", bind_host, bind_port);
-                log::info!("Enabling interface '{}': TCP Server on {}", iface.name, addr);
-                let iface_addr = iface_manager.lock().await.spawn(
-                    TcpServer::new(addr, iface_manager.clone()),
-                    TcpServer::spawn,
-                );
-                if iface.discoverable {
-                    // XXX: If reachable_on is None, we should check external IP somehow
-                    let (reachable_host, reachable_port) = match iface.reachable_on {
-                        Some(addr) => split_host_port(&addr)?,
-                        None => (bind_host, bind_port),
-                    };
-                    let mut discovery_config = DiscoveryInterfaceConfig::tcp_server(iface.name, reachable_host, reachable_port);
-                    discovery_config.height = iface.height;
-                    discovery_config.latitude = iface.latitude;
-                    discovery_config.longitude = iface.longitude;
-                    transport.register_discoverable_interface(iface_addr, discovery_config).await;
+            if !enabled {
+                continue;
+            }
+
+            match iface.config {
+                InterfaceConfig::TCPServerInterface {
+                    bind_host,
+                    bind_port,
+                    ..
+                } => {
+                    let addr = format!("{}:{}", bind_host, bind_port);
+                    log::info!(
+                        "Enabling interface '{}': TCP Server on {}",
+                        iface.name,
+                        addr
+                    );
+                    let iface_addr = iface_manager.lock().await.spawn(
+                        TcpServer::new(addr, iface_manager.clone()),
+                        TcpServer::spawn,
+                    );
+                    if iface.discoverable {
+                        // XXX: If reachable_on is None, we should check external IP somehow
+                        let (reachable_host, reachable_port) = match iface.reachable_on {
+                            Some(addr) => split_host_port(&addr)?,
+                            None => (bind_host, bind_port),
+                        };
+                        let mut discovery_config = DiscoveryInterfaceConfig::tcp_server(
+                            iface.name,
+                            reachable_host,
+                            reachable_port,
+                        );
+                        discovery_config.height = iface.height;
+                        discovery_config.latitude = iface.latitude;
+                        discovery_config.longitude = iface.longitude;
+                        transport
+                            .register_discoverable_interface(iface_addr, discovery_config)
+                            .await;
+                    }
+                }
+                InterfaceConfig::TCPClientInterface {
+                    target_host,
+                    target_port,
+                    ..
+                } => {
+                    let addr = format!("{}:{}", target_host, target_port);
+                    log::info!(
+                        "Enabling interface '{}': TCP Client to {}",
+                        iface.name,
+                        addr
+                    );
+                    iface_manager
+                        .lock()
+                        .await
+                        .spawn(TcpClient::new(addr), TcpClient::spawn);
+                }
+                InterfaceConfig::UDPInterface {
+                    listen_ip,
+                    listen_port,
+                    forward_ip,
+                    forward_port,
+                    ..
+                } => {
+                    let bind_addr = format!("{}:{}", listen_ip, listen_port);
+                    let forward_addr = format!("{}:{}", forward_ip, forward_port);
+                    log::info!(
+                        "Enabling interface '{}': UDP {}→{}",
+                        iface.name,
+                        bind_addr,
+                        forward_addr
+                    );
+                    iface_manager.lock().await.spawn(
+                        UdpInterface::new(bind_addr, Some(forward_addr)),
+                        UdpInterface::spawn,
+                    );
+                }
+
+                InterfaceConfig::RNodeInterface {
+                    port,
+                    frequency,
+                    bandwidth,
+                    txpower,
+                    spreadingfactor,
+                    codingrate,
+                    flow_control,
+                    ..
+                } => {
+                    log::info!(
+                        "Enabling interface '{}': RNode {} ({},{},{},{})",
+                        iface.name,
+                        port,
+                        frequency,
+                        bandwidth,
+                        spreadingfactor,
+                        codingrate
+                    );
+                    let rnode_config = RNodeConfig::new(
+                        port,
+                        frequency,
+                        bandwidth,
+                        txpower,
+                        spreadingfactor,
+                        codingrate,
+                    );
+                    //rnode_config.with_flow_control(flow_control);
+                    rnode_config.validate()?;
+                    iface_manager
+                        .lock()
+                        .await
+                        .spawn(RNodeInterface::new(rnode_config), RNodeInterface::spawn);
+                }
+
+                InterfaceConfig::AutoInterface { .. } => {
+                    log::warn!(
+                        "Interface '{}' type 'AutoInterface' is not yet supported",
+                        iface.name
+                    );
+                }
+                InterfaceConfig::I2PInterface { .. } => {
+                    log::warn!(
+                        "Interface '{}' type 'I2PInterface' is not yet supported",
+                        iface.name
+                    );
+                }
+                InterfaceConfig::BLEInterface { .. } => {
+                    log::warn!(
+                        "Interface '{}' type 'BLEInterface' is not yet supported",
+                        iface.name
+                    );
+                }
+                InterfaceConfig::KISSInterface { .. } => {
+                    log::warn!(
+                        "Interface '{}' type 'KISSInterface' is not yet supported",
+                        iface.name
+                    );
+                }
+                InterfaceConfig::AX25KISSInterface { .. } => {
+                    log::warn!(
+                        "Interface '{}' type 'AX25KISSInterface' is not yet supported",
+                        iface.name
+                    );
+                }
+                InterfaceConfig::Unsupported => {
+                    log::warn!("Interface '{}' uses an unsupported type", iface.name);
                 }
             }
-            InterfaceConfig::TCPClientInterface { target_host, target_port, .. } => {
-                let addr = format!("{}:{}", target_host, target_port);
-                log::info!("Enabling interface '{}': TCP Client to {}", iface.name, addr);
-                iface_manager.lock().await.spawn(
-                    TcpClient::new(addr),
-                    TcpClient::spawn,
-                );
-            }
-            InterfaceConfig::UDPInterface { listen_ip, listen_port, forward_ip, forward_port, .. } => {
-                let bind_addr = format!("{}:{}", listen_ip, listen_port);
-                let forward_addr = format!("{}:{}", forward_ip, forward_port);
-                log::info!("Enabling interface '{}': UDP {}→{}", iface.name, bind_addr, forward_addr);
-                iface_manager.lock().await.spawn(
-                    UdpInterface::new(bind_addr, Some(forward_addr)),
-                    UdpInterface::spawn,
-                );
-            }
-
-            InterfaceConfig::RNodeInterface { port, frequency, bandwidth, txpower, spreadingfactor, codingrate, flow_control, .. } => {
-                log::info!("Enabling interface '{}': RNode {} ({},{},{},{})", iface.name, port, frequency, bandwidth, spreadingfactor, codingrate);
-				let rnode_config = RNodeConfig::new(port, frequency, bandwidth, txpower, spreadingfactor, codingrate);
-				//rnode_config.with_flow_control(flow_control);
-				rnode_config.validate()?;
-				iface_manager.lock().await.spawn(
-					RNodeInterface::new(rnode_config),
-					RNodeInterface::spawn,
-				);
-            }
-
-            InterfaceConfig::AutoInterface { .. } => {
-                log::warn!("Interface '{}' type 'AutoInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::I2PInterface { .. } => {
-                log::warn!("Interface '{}' type 'I2PInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::BLEInterface { .. } => {
-                log::warn!("Interface '{}' type 'BLEInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::KISSInterface { .. } => {
-                log::warn!("Interface '{}' type 'KISSInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::AX25KISSInterface { .. } => {
-                log::warn!("Interface '{}' type 'AX25KISSInterface' is not yet supported", iface.name);
-            }
-            InterfaceConfig::Unsupported => {
-                log::warn!("Interface '{}' uses an unsupported type", iface.name);
-            }
         }
-    }
 
         Ok(Self { transport })
     }
 
     async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
         log::info!("Reticulum instance running, interfaces initialized");
-        
+
         signal::ctrl_c().await?;
-        
+
         log::info!("Shutdown signal received, cleaning up");
         drop(self.transport);
-        
+
         Ok(())
     }
 }
 
-fn load_or_create_identity(config_path: &Path) -> Result<PrivateIdentity, Box<dyn std::error::Error>> {
+fn load_or_create_identity(
+    config_path: &Path,
+) -> Result<PrivateIdentity, Box<dyn std::error::Error>> {
     let identity_path = identity_path(config_path);
     if identity_path.exists() {
         let identity_hex = fs::read_to_string(&identity_path)?;
@@ -210,7 +285,11 @@ fn load_or_create_identity(config_path: &Path) -> Result<PrivateIdentity, Box<dy
                     ),
                 )
             })?;
-        log::info!("Loaded Reticulum identity {} from {}", identity.address_hash(), identity_path.display());
+        log::info!(
+            "Loaded Reticulum identity {} from {}",
+            identity.address_hash(),
+            identity_path.display()
+        );
         return Ok(identity);
     }
 
@@ -218,7 +297,8 @@ fn load_or_create_identity(config_path: &Path) -> Result<PrivateIdentity, Box<dy
     save_identity(&identity_path, &identity)?;
     log::info!(
         "Generated new Reticulum identity {} at {}",
-        identity.address_hash(), identity_path.display()
+        identity.address_hash(),
+        identity_path.display()
     );
 
     Ok(identity)

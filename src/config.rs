@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
-use std::path::Path;
 use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Config {
@@ -162,8 +162,11 @@ fn quote_if_needed(line: &str, key: &str) -> String {
         let value = rest.split_whitespace().next().unwrap_or(rest).trim();
 
         // Don't quote numbers or booleans
-        if value.parse::<i64>().is_ok() || value.parse::<f64>().is_ok()
-            || value == "true" || value == "false" {
+        if value.parse::<i64>().is_ok()
+            || value.parse::<f64>().is_ok()
+            || value == "true"
+            || value == "false"
+        {
             return line.to_string();
         }
 
@@ -174,11 +177,21 @@ fn quote_if_needed(line: &str, key: &str) -> String {
     }
 }
 
-fn default_true() -> bool { true }
-fn default_false() -> bool { false }
-fn default_shared_port() -> u16 { 37428 }
-fn default_control_port() -> u16 { 37429 }
-fn default_loglevel() -> u8 { 4 }
+fn default_true() -> bool {
+    true
+}
+fn default_false() -> bool {
+    false
+}
+fn default_shared_port() -> u16 {
+    37428
+}
+fn default_control_port() -> u16 {
+    37429
+}
+fn default_loglevel() -> u8 {
+    4
+}
 
 impl Default for ReticulumConfig {
     fn default() -> Self {
@@ -222,7 +235,10 @@ impl Config {
 
             // Detect interface block start
             if trimmed.starts_with("[[") && trimmed.ends_with("]]") {
-                let name = trimmed.trim_start_matches("[[").trim_end_matches("]]").trim();
+                let name = trimmed
+                    .trim_start_matches("[[")
+                    .trim_end_matches("]]")
+                    .trim();
                 if name != "interfaces" {
                     // Convert [[Interface Name]] to [[interfaces]]
                     output.push_str("\n[[interfaces]]\n");
@@ -272,7 +288,7 @@ impl Config {
         let mut paths = vec![];
 
         if let Some(home) = dirs::home_dir() {
-            #[cfg(target_os="haiku")]
+            #[cfg(target_os = "haiku")]
             paths.push(home.join("config/settings/reticulum"));
             paths.push(home.join(".config/reticulum"));
             paths.push(home.join(".reticulum"));
@@ -290,10 +306,10 @@ impl Config {
     }
 
     pub fn default_path() -> PathBuf {
-        if cfg!(target_os="haiku") {
+        if cfg!(target_os = "haiku") {
             return dirs::home_dir()
                 .expect("home directory")
-                .join("config/settings/reticulum")
+                .join("config/settings/reticulum");
         }
         dirs::home_dir()
             .expect("home directory")
@@ -301,7 +317,10 @@ impl Config {
     }
 
     pub fn migrate_config(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Migrating old rnsd configuration ({}) to standard toml...", path.display());
+        println!(
+            "Migrating old rnsd configuration ({}) to standard toml...",
+            path.display()
+        );
         let old_config = std::fs::read_to_string(path.join("config"))?;
         let content = Self::convert_python_config(&old_config);
         fs::write(path.join("config.toml"), content)?;
@@ -316,14 +335,18 @@ impl Config {
         let config_file = path.join("config.toml");
         if !config_file.exists() {
             println!("Error: Please configure rncdaemon via ~/.config/reticulum/config.toml");
-            return Err("Missing configuration".into())
+            return Err("Missing configuration".into());
         }
         let content = std::fs::read_to_string(&config_file)?;
         let config: Config = toml::from_str(&content)?;
 
         if config.reticulum.share_instance {
-            log::warn!("share_instance is enabled but shared instances are not supported in reticulum-rs");
-            log::warn!("Each Rust daemon process runs independently and is only limited by available ports");
+            log::warn!(
+                "share_instance is enabled but shared instances are not supported in reticulum-rs"
+            );
+            log::warn!(
+                "Each Rust daemon process runs independently and is only limited by available ports"
+            );
         }
 
         Ok(config)
@@ -342,7 +365,10 @@ impl Config {
             let config_file = default_dir.join("config.toml");
             std::fs::write(&config_file, toml::to_string_pretty(&config)?)?;
 
-            log::warn!("Created default configuration at: {}", config_file.display());
+            log::warn!(
+                "Created default configuration at: {}",
+                config_file.display()
+            );
             log::warn!("Please review and customize the configuration for your needs");
 
             Ok((config, default_dir))
@@ -353,21 +379,19 @@ impl Config {
         Self {
             reticulum: ReticulumConfig::default(),
             logging: LoggingConfig::default(),
-            interfaces: vec![
-                NamedInterface {
-                    name: "Default TCP Server Interface".to_string(),
-                    discoverable: false,
-                    reachable_on: None,
-                    latitude: None,
-                    longitude: None,
-                    height: None,
-                    config: InterfaceConfig::TCPServerInterface {
-                        enabled: true,
-                        bind_host: "127.0.0.1".to_string(),
-                        bind_port: 4242,
-                    },
+            interfaces: vec![NamedInterface {
+                name: "Default TCP Server Interface".to_string(),
+                discoverable: false,
+                reachable_on: None,
+                latitude: None,
+                longitude: None,
+                height: None,
+                config: InterfaceConfig::TCPServerInterface {
+                    enabled: true,
+                    bind_host: "127.0.0.1".to_string(),
+                    bind_port: 4242,
                 },
-            ],
+            }],
         }
     }
 
