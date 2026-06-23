@@ -142,6 +142,14 @@ pub enum InterfaceConfig {
         #[serde(default)]
         flow_control: bool,
     },
+    Modem73Interface {
+        #[serde(default = "default_true")]
+        enabled: bool,
+        target_host: String,
+        target_port: u32,
+        control_host: String,
+        control_port: u32,
+    },
     #[serde(other)]
     Unsupported,
 }

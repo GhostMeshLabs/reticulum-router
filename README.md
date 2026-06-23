@@ -63,16 +63,18 @@ discoverable = true
 reachable_on = "cool.server.com:4242"
 
 [[interfaces]]
+name = "Modem73"
+type = "Modem73Interface"
+enabled = false
+target_host = 127.0.0.1
+target_port = 8001
+control_host = 127.0.0.1
+control_port = 8073
+
+[[interfaces]]
 name = "GhostMesh 👻 ATX (IPv4,IPv6,LoRA)"
 type = "TCPClientInterface"
 enabled = true
 target_host = "rns.atx.ghostmesh.net"
-target_port = 4242
-
-[[interfaces]]
-name = "GhostMesh 👻 ATL (IPv6)"
-type = "TCPClientInterface"
-enabled = true
-target_host = "rns.atl.ghostmesh.net"
 target_port = 4242
 ```

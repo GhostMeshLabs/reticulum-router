@@ -6,6 +6,7 @@ use reticulum_sdk::identity::PrivateIdentity;
 use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
+use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::udp::UdpInterface;
 use reticulum_sdk::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
 use std::fs::{self, OpenOptions};
@@ -104,6 +105,7 @@ impl Daemon {
                 InterfaceConfig::BLEInterface { enabled, .. } => *enabled,
                 InterfaceConfig::KISSInterface { enabled, .. } => *enabled,
                 InterfaceConfig::AX25KISSInterface { enabled, .. } => *enabled,
+                InterfaceConfig::Modem73Interface { enabled, .. } => *enabled,
                 InterfaceConfig::Unsupported => false,
             };
 
@@ -217,7 +219,26 @@ impl Daemon {
                         .await
                         .spawn(RNodeInterface::new(rnode_config), RNodeInterface::spawn);
                 }
-
+                InterfaceConfig::Modem73Interface {
+                    target_host,
+                    target_port,
+                    control_host,
+                    control_port,
+                    ..
+                } => {
+                    let target_addr = format!("{}:{}", target_host, target_port);
+                    let control_addr = format!("{}:{}", control_host, control_port);
+                    log::info!(
+                        "Enabling interface '{}': Modem73 {}/{}",
+                        iface.name,
+                        target_addr,
+                        control_addr
+                    );
+                    iface_manager.lock().await.spawn(
+                        Modem73Interface::new(target_addr, control_addr),
+                        Modem73Interface::spawn,
+                    );
+                }
                 InterfaceConfig::AutoInterface { .. } => {
                     log::warn!(
                         "Interface '{}' type 'AutoInterface' is not yet supported",
