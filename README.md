@@ -42,6 +42,9 @@ The Reticulum Router Daemon will automatically convert any existing non-standard
 [reticulum]
 enable_transport = true
 share_instance = true
+shared_instance_port = 37428
+instance_control_port = 37429
+rpc_key = "somethingsecretmatchingpythonrnsd"
 instance_name = "default"
 respond_to_probes = true
 
@@ -66,9 +69,9 @@ reachable_on = "cool.server.com:4242"
 name = "Modem73"
 type = "Modem73Interface"
 enabled = false
-target_host = 127.0.0.1
+target_host = "127.0.0.1"
 target_port = 8001
-control_host = 127.0.0.1
+control_host = "127.0.0.1"
 control_port = 8073
 
 [[interfaces]]
