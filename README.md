@@ -21,6 +21,24 @@ Application messages such as LXMF and NomadNetwork will flow over the transport 
 * ❌ rnstransport remote.management (aka enable_remote_management)
 * ❌ info blackhole (aka publish_blackhole)
 
+## Implemented interfaces
+
+> Physical communication interfaces implemented
+
+* ✅ TCPServerInterface
+* ✅ TCPClientInterface
+* ✅ UDPInterface
+* ❌ AutoInterface
+* ❌ BackboneInterface (Use TCPServerInterface instead for now)
+* ❌ I2PInterface
+* ❌ RNodeMultiInterface
+* ✅ RNodeInterface (over Serial)
+* ❌ SerialInterface
+* ❌ PipeInterface
+* ❌ KISSInterface
+* ✅ [Modem73Interface](https://github.com/RFnexus/modem73)
+* ❌ AX25KISSInterface
+
 # Configuring
 
 The Reticulum Router Daemon will automatically convert any existing non-standard Python rnsd configurations to standard toml config files.
