@@ -1,19 +1,25 @@
 mod config;
 
-use config::{Config, InterfaceConfig};
+use config::{Config, InterfaceConfig, MetricsConfig};
 use rand::rngs::OsRng;
 use reticulum_sdk::identity::PrivateIdentity;
+use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
-use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::udp::UdpInterface;
-use reticulum_sdk::transport::{DiscoveryInterfaceConfig, Transport, TransportConfig};
+use reticulum_sdk::transport::{
+    DiscoveryInterfaceConfig, Transport, TransportConfig, TransportMetrics,
+};
 use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 use tokio::signal;
+use tokio::task::JoinHandle;
 
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -51,7 +57,8 @@ fn split_host_port(input: &str) -> Result<(String, u16), String> {
 }
 
 struct Daemon {
-    transport: Transport,
+    transport: Arc<Transport>,
+    metrics_task: Option<JoinHandle<()>>,
 }
 
 impl Daemon {
@@ -92,6 +99,7 @@ impl Daemon {
             cfg
         });
 
+        let transport = Arc::new(transport);
         let iface_manager = transport.iface_manager();
 
         for iface in config.interfaces {
@@ -192,7 +200,7 @@ impl Daemon {
                     txpower,
                     spreadingfactor,
                     codingrate,
-                    flow_control,
+                    flow_control: _,
                     ..
                 } => {
                     log::info!(
@@ -275,19 +283,147 @@ impl Daemon {
             }
         }
 
-        Ok(Self { transport })
+        let metrics_task = if config.metrics.enabled {
+            Some(spawn_metrics_server(config.metrics, transport.clone()).await?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            transport,
+            metrics_task,
+        })
     }
 
-    async fn run(self) -> Result<(), Box<dyn std::error::Error>> {
+    async fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         log::info!("Reticulum instance running, interfaces initialized");
 
         signal::ctrl_c().await?;
 
         log::info!("Shutdown signal received, cleaning up");
+        if let Some(metrics_task) = self.metrics_task.take() {
+            metrics_task.abort();
+        }
         drop(self.transport);
 
         Ok(())
     }
+}
+
+async fn spawn_metrics_server(
+    config: MetricsConfig,
+    transport: Arc<Transport>,
+) -> io::Result<JoinHandle<()>> {
+    let addr = format!("{}:{}", config.bind_host, config.bind_port);
+    let listener = TcpListener::bind(&addr).await.map_err(|err| {
+        io::Error::new(
+            err.kind(),
+            format!("failed to bind Prometheus metrics endpoint on {addr}: {err}"),
+        )
+    })?;
+
+    Ok(tokio::spawn(async move {
+        log::info!("Prometheus metrics endpoint listening on http://{addr}/metrics");
+
+        loop {
+            let (stream, peer) = match listener.accept().await {
+                Ok(conn) => conn,
+                Err(err) => {
+                    log::warn!("Failed to accept Prometheus metrics connection: {err}");
+                    continue;
+                }
+            };
+
+            let transport = transport.clone();
+            tokio::spawn(async move {
+                if let Err(err) = handle_metrics_connection(stream, transport).await {
+                    log::debug!("Prometheus metrics connection from {peer} failed: {err}");
+                }
+            });
+        }
+    }))
+}
+
+async fn handle_metrics_connection(
+    mut stream: TcpStream,
+    transport: Arc<Transport>,
+) -> io::Result<()> {
+    let mut request = [0_u8; 1024];
+    let bytes_read = stream.read(&mut request).await?;
+    let request_line = std::str::from_utf8(&request[..bytes_read])
+        .ok()
+        .and_then(|request| request.lines().next())
+        .unwrap_or("");
+
+    if !request_line.starts_with("GET /metrics ") && !request_line.starts_with("GET /metrics?") {
+        write_http_response(
+            &mut stream,
+            "404 Not Found",
+            "text/plain; charset=utf-8",
+            "not found\n",
+        )
+        .await?;
+        return Ok(());
+    }
+
+    let body = render_prometheus_metrics(transport.metrics().await);
+    write_http_response(
+        &mut stream,
+        "200 OK",
+        "text/plain; version=0.0.4; charset=utf-8",
+        &body,
+    )
+    .await
+}
+
+async fn write_http_response(
+    stream: &mut TcpStream,
+    status: &str,
+    content_type: &str,
+    body: &str,
+) -> io::Result<()> {
+    let response = format!(
+        "HTTP/1.1 {status}\r\ncontent-type: {content_type}\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    stream.write_all(response.as_bytes()).await
+}
+
+fn render_prometheus_metrics(metrics: TransportMetrics) -> String {
+    let mut output = String::new();
+
+    output.push_str("# HELP reticulum_transport_path_table_entries Number of entries currently known in the Reticulum transport path table.\n");
+    output.push_str("# TYPE reticulum_transport_path_table_entries gauge\n");
+    output.push_str(&format!(
+        "reticulum_transport_path_table_entries {}\n",
+        metrics.path_table_entries
+    ));
+
+    output.push_str("# HELP reticulum_transport_interface_rx_queue_length Number of inbound packets queued from interface workers to transport.\n");
+    output.push_str("# TYPE reticulum_transport_interface_rx_queue_length gauge\n");
+    output.push_str(&format!(
+        "reticulum_transport_interface_rx_queue_length {}\n",
+        metrics.interface_queues.rx
+    ));
+
+    output.push_str("# HELP reticulum_transport_interface_tx_queue_length Number of outbound packets queued for an interface worker.\n");
+    output.push_str("# TYPE reticulum_transport_interface_tx_queue_length gauge\n");
+    output.push_str("# HELP reticulum_transport_interface_announce_queue_length Number of forwarded announces waiting in an interface announce pacer.\n");
+    output.push_str("# TYPE reticulum_transport_interface_announce_queue_length gauge\n");
+
+    for iface in metrics.interface_queues.interfaces {
+        let interface = iface.address.to_hex_string();
+        output.push_str(&format!(
+            "reticulum_transport_interface_tx_queue_length{{interface=\"{}\"}} {}\n",
+            interface, iface.tx
+        ));
+        output.push_str(&format!(
+            "reticulum_transport_interface_announce_queue_length{{interface=\"{}\"}} {}\n",
+            interface, iface.announce
+        ));
+    }
+
+    output
 }
 
 fn load_or_create_identity(

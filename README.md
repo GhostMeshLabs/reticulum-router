@@ -76,6 +76,11 @@ respond_to_probes = true
 [logging]
 loglevel = 5
 
+[metrics]
+enabled = false
+bind_host = "127.0.0.1"
+bind_port = 9090
+
 [[interfaces]]
 name = "Default Interface"
 type = "AutoInterface"

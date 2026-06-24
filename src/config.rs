@@ -10,6 +10,8 @@ pub struct Config {
     #[serde(default)]
     pub logging: LoggingConfig,
     #[serde(default)]
+    pub metrics: MetricsConfig,
+    #[serde(default)]
     pub interfaces: Vec<NamedInterface>,
 }
 
@@ -37,6 +39,16 @@ pub struct ReticulumConfig {
 pub struct LoggingConfig {
     #[serde(default = "default_loglevel")]
     pub loglevel: u8,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MetricsConfig {
+    #[serde(default = "default_false")]
+    pub enabled: bool,
+    #[serde(default = "default_metrics_bind_host")]
+    pub bind_host: String,
+    #[serde(default = "default_metrics_bind_port")]
+    pub bind_port: u16,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -200,6 +212,12 @@ fn default_control_port() -> u16 {
 fn default_loglevel() -> u8 {
     4
 }
+fn default_metrics_bind_host() -> String {
+    "127.0.0.1".to_string()
+}
+fn default_metrics_bind_port() -> u16 {
+    9090
+}
 
 impl Default for ReticulumConfig {
     fn default() -> Self {
@@ -219,6 +237,16 @@ impl Default for ReticulumConfig {
 impl Default for LoggingConfig {
     fn default() -> Self {
         Self { loglevel: 4 }
+    }
+}
+
+impl Default for MetricsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bind_host: default_metrics_bind_host(),
+            bind_port: default_metrics_bind_port(),
+        }
     }
 }
 
@@ -387,6 +415,7 @@ impl Config {
         Self {
             reticulum: ReticulumConfig::default(),
             logging: LoggingConfig::default(),
+            metrics: MetricsConfig::default(),
             interfaces: vec![NamedInterface {
                 name: "Default TCP Server Interface".to_string(),
                 discoverable: false,
