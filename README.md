@@ -29,7 +29,7 @@ A pure, rust-based transport for the Reticulum network based largely on [reticul
 
 * ❌ AX25KISSInterface
 * ✅ [Modem73Interface](https://github.com/RFnexus/modem73)
-* ✅ RNodeInterface (over Serial)
+* ✅ [RNodeInterface](https://unsigned.io/rnode/) (over Serial)
 * ❌ RNodeMultiInterface
 * ❌ KISSInterface
 
@@ -61,7 +61,7 @@ The Reticulum Router Daemon will automatically convert any existing non-standard
   * Does *NOT* accept a local script to execute to get your IP
     * (in the future, we want to detect your external IP if reachable_on is omitted)
 
-## Example Syntax
+## Example syntax
 
 ```toml
 [reticulum]
@@ -116,7 +116,7 @@ $ git clone https://github.com/GhostMeshLabs/reticulum-router.git && cd reticulu
 $ cargo build --release
 ```
 
-## Container Deployment
+## Container deployment
 
 > Linux, Alpine based x86_64 and aarch64 containers are available
 
@@ -129,3 +129,11 @@ docker run -v reticulum_data:/root/.config/reticulum ghcr.io/ghostmeshlabs/retic
 
   * identity - Node identity
   * config.toml - Example basic node configuration
+
+# Projects implemented over Reticulum
+
+* [Nomad Network](https://unsigned.io/software/Nomad_Network.html) - A smol web based on lightweight web pages run over Reticulum
+* [MeshChatX](https://meshchatx.com) - A desktop all-in-one client supporting Chat, VoIP, and Nomad Network over Reticulum
+* [Columba](https://columba.network) - An Android, all-in-one client supporting Chat and VoIP
+~
+~
