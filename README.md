@@ -91,9 +91,16 @@ target_port = 4242
 
 # Installing
 
+## Compiling Source Code
+
+```
+$ git clone https://github.com/GhostMeshLabs/reticulum-router.git && cd reticulum-router
+$ cargo build --release
+```
+
 ## Container Deployment
 
-> x86_64 and ARM64 containers are available
+> Linux, Alpine based x86_64 and aarch64 containers are available
 
 ```
 docker pull ghcr.io/ghostmeshlabs/reticulum-router:v1.3.5
