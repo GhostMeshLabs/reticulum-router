@@ -29,9 +29,16 @@ The Reticulum Router Daemon will automatically convert any existing non-standard
 
 ## Differences from rnsd configuration
 
-* discovery_name
+* toml
+  * The config file is actually standard toml. reticulum-router will attempt to convert any
+    existing non-standard Python rnsd config files to compatible toml (creating a new config
+    called config.toml)
+* toml location
+  * We search ~/.reticulum for compatibility, then fall-back to a more standard ~/.config/reticulum
+    config path.
+* interfaces / discovery_name
   * Omitted. We just use interface name
-* reachable_on
+* interfaces / reachable_on
   * We *DO* optionally want a port number, because sometimes things are behind load balancers
   * Does *NOT* accept a local script to execute to get your IP
     * (in the future, we want to detect your external IP if reachable_on is omitted)
@@ -81,3 +88,19 @@ enabled = true
 target_host = "rns.atx.ghostmesh.net"
 target_port = 4242
 ```
+
+# Installing
+
+## Container Deployment
+
+> x86_64 and ARM64 containers are available
+
+```
+docker pull ghcr.io/ghostmeshlabs/reticulum-router:v1.3.5
+docker run -v reticulum_data:/root/.config/reticulum ghcr.io/ghostmeshlabs/reticulum-router:v1.3.5
+```
+
+/root/.config/reticulum will contain the following files:
+
+  * identity - Node identity
+  * config.toml - Example basic node configuration
