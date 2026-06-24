@@ -80,6 +80,9 @@ loglevel = 5
 enabled = false
 bind_host = "127.0.0.1"
 bind_port = 9090
+collection_interval_seconds = 5
+collection_timeout_seconds = 3
+request_timeout_seconds = 2
 
 [[interfaces]]
 name = "Default Interface"

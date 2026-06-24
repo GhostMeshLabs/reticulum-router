@@ -16,10 +16,13 @@ use std::io::{self, Write};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::signal;
+use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
+use tokio::time::{interval, timeout};
 
 #[cfg(unix)]
 use std::os::unix::fs::OpenOptionsExt;
@@ -322,31 +325,66 @@ async fn spawn_metrics_server(
         )
     })?;
 
+    let collection_interval = Duration::from_secs(config.collection_interval_seconds.max(1));
+    let collection_timeout = Duration::from_secs(config.collection_timeout_seconds.max(1));
+    let request_timeout = Duration::from_secs(config.request_timeout_seconds.max(1));
+    let cached_body = Arc::new(RwLock::new(render_prometheus_metrics(
+        TransportMetrics::default(),
+        None,
+    )));
+
     Ok(tokio::spawn(async move {
         log::info!("Prometheus metrics endpoint listening on http://{addr}/metrics");
+        log::info!(
+            "Prometheus metrics collection interval: {collection_interval:?}, collection timeout: {collection_timeout:?}, request timeout: {request_timeout:?}"
+        );
+        let mut collection_tick = interval(collection_interval);
 
         loop {
-            let (stream, peer) = match listener.accept().await {
-                Ok(conn) => conn,
-                Err(err) => {
-                    log::warn!("Failed to accept Prometheus metrics connection: {err}");
-                    continue;
+            tokio::select! {
+                _ = collection_tick.tick() => {
+                    match timeout(collection_timeout, transport.metrics()).await {
+                        Ok(metrics) => {
+                            let mut body = cached_body.write().await;
+                            *body = render_prometheus_metrics(metrics, unix_timestamp_seconds());
+                        }
+                        Err(_) => {
+                            log::warn!(
+                                "Prometheus metrics collection exceeded {collection_timeout:?}; serving previous snapshot"
+                            );
+                        }
+                    }
                 }
-            };
+                accepted = listener.accept() => {
+                    let (stream, peer) = match accepted {
+                        Ok(conn) => conn,
+                        Err(err) => {
+                            log::warn!("Failed to accept Prometheus metrics connection: {err}");
+                            continue;
+                        }
+                    };
 
-            let transport = transport.clone();
-            tokio::spawn(async move {
-                if let Err(err) = handle_metrics_connection(stream, transport).await {
-                    log::debug!("Prometheus metrics connection from {peer} failed: {err}");
+                    let cached_body = cached_body.clone();
+                    tokio::spawn(async move {
+                        match timeout(request_timeout, handle_metrics_connection(stream, cached_body)).await {
+                            Ok(Ok(())) => {}
+                            Ok(Err(err)) => {
+                                log::debug!("Prometheus metrics connection from {peer} failed: {err}");
+                            }
+                            Err(_) => {
+                                log::debug!("Prometheus metrics connection from {peer} exceeded {request_timeout:?}");
+                            }
+                        }
+                    });
                 }
-            });
+            }
         }
     }))
 }
 
 async fn handle_metrics_connection(
     mut stream: TcpStream,
-    transport: Arc<Transport>,
+    cached_body: Arc<RwLock<String>>,
 ) -> io::Result<()> {
     let mut request = [0_u8; 1024];
     let bytes_read = stream.read(&mut request).await?;
@@ -366,7 +404,7 @@ async fn handle_metrics_connection(
         return Ok(());
     }
 
-    let body = render_prometheus_metrics(transport.metrics().await);
+    let body = cached_body.read().await.clone();
     write_http_response(
         &mut stream,
         "200 OK",
@@ -389,7 +427,10 @@ async fn write_http_response(
     stream.write_all(response.as_bytes()).await
 }
 
-fn render_prometheus_metrics(metrics: TransportMetrics) -> String {
+fn render_prometheus_metrics(
+    metrics: TransportMetrics,
+    collected_at_seconds: Option<u64>,
+) -> String {
     let mut output = String::new();
 
     output.push_str("# HELP reticulum_transport_path_table_entries Number of entries currently known in the Reticulum transport path table.\n");
@@ -423,7 +464,23 @@ fn render_prometheus_metrics(metrics: TransportMetrics) -> String {
         ));
     }
 
+    output.push_str("# HELP reticulum_transport_metrics_last_collection_timestamp_seconds Unix timestamp of the last successful transport metrics collection.\n");
+    output.push_str("# TYPE reticulum_transport_metrics_last_collection_timestamp_seconds gauge\n");
+    if let Some(collected_at_seconds) = collected_at_seconds {
+        output.push_str(&format!(
+            "reticulum_transport_metrics_last_collection_timestamp_seconds {}\n",
+            collected_at_seconds
+        ));
+    }
+
     output
+}
+
+fn unix_timestamp_seconds() -> Option<u64> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .map(|duration| duration.as_secs())
 }
 
 fn load_or_create_identity(

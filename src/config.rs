@@ -49,6 +49,12 @@ pub struct MetricsConfig {
     pub bind_host: String,
     #[serde(default = "default_metrics_bind_port")]
     pub bind_port: u16,
+    #[serde(default = "default_metrics_collection_interval_seconds")]
+    pub collection_interval_seconds: u64,
+    #[serde(default = "default_metrics_collection_timeout_seconds")]
+    pub collection_timeout_seconds: u64,
+    #[serde(default = "default_metrics_request_timeout_seconds")]
+    pub request_timeout_seconds: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -218,6 +224,15 @@ fn default_metrics_bind_host() -> String {
 fn default_metrics_bind_port() -> u16 {
     9090
 }
+fn default_metrics_collection_interval_seconds() -> u64 {
+    5
+}
+fn default_metrics_collection_timeout_seconds() -> u64 {
+    3
+}
+fn default_metrics_request_timeout_seconds() -> u64 {
+    2
+}
 
 impl Default for ReticulumConfig {
     fn default() -> Self {
@@ -246,6 +261,9 @@ impl Default for MetricsConfig {
             enabled: false,
             bind_host: default_metrics_bind_host(),
             bind_port: default_metrics_bind_port(),
+            collection_interval_seconds: default_metrics_collection_interval_seconds(),
+            collection_timeout_seconds: default_metrics_collection_timeout_seconds(),
+            request_timeout_seconds: default_metrics_request_timeout_seconds(),
         }
     }
 }
