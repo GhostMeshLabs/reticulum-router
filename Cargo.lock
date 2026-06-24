@@ -1045,7 +1045,7 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "reticulum-router"
-version = "1.3.6"
+version = "1.3.8"
 dependencies = [
  "base64",
  "dirs",
@@ -1065,9 +1065,9 @@ dependencies = [
 
 [[package]]
 name = "reticulum-sdk"
-version = "2.0.1"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f005ab79263fa975cd0a98b9286235145e514096b94ecdc3076b86f09c09d2d8"
+checksum = "d3f93a29b9965f70224d59c9b63e20b97c8d644a0a75e0687ce3da58a15d09c6"
 dependencies = [
  "aes",
  "cbc",
