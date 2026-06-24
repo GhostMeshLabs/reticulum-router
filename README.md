@@ -4,16 +4,7 @@
 
 A pure, rust-based transport for the Reticulum network based largely on [reticulum-sdk](https://github.com/GhostMeshLabs/reticulum-sdk)
 
-# Limitations
-
-## LXMF
-
-The original Python implementation of rnsd stuffs a bunch of add-on services behind rnsd including LXMF, and NomadNetwork.
-[LXMF services](https://github.com/markqvist/lxmf) are not part of this project! This is strictly a Reticulum protocol transport.
-
-Application messages such as LXMF and NomadNetwork will flow over the transport as expected.
-
-## Implemented Transport Destinations
+## Implemented protocol features
 
 * ✅ rnstransport path.request
 * ✅ rnstransport probe (aka respond_to_probes)
@@ -25,19 +16,28 @@ Application messages such as LXMF and NomadNetwork will flow over the transport 
 
 > Physical communication interfaces implemented
 
-* ✅ TCPServerInterface
-* ✅ TCPClientInterface
-* ✅ UDPInterface
+### IP Network (LAN, WAN)
+
 * ❌ AutoInterface
 * ❌ BackboneInterface (Use TCPServerInterface instead for now)
 * ❌ I2PInterface
-* ❌ RNodeMultiInterface
-* ✅ RNodeInterface (over Serial)
-* ❌ SerialInterface
-* ❌ PipeInterface
-* ❌ KISSInterface
-* ✅ [Modem73Interface](https://github.com/RFnexus/modem73)
+* ✅ TCPClientInterface
+* ✅ TCPServerInterface (bind_host ::1 will allow dual-stack functionality)
+* ✅ UDPInterface
+
+### Radio (HAM, LoRA)
+
 * ❌ AX25KISSInterface
+* ✅ [Modem73Interface](https://github.com/RFnexus/modem73)
+* ✅ RNodeInterface (over Serial)
+* ❌ RNodeMultiInterface
+* ❌ KISSInterface
+
+### Other
+
+* ❌ BluetoothInterface
+* ❌ PipeInterface
+* ❌ SerialInterface
 
 # Configuring
 
