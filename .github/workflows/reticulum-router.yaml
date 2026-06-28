@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     env:
-      REPOSITORY: "ghcr.io/ghostmeshlabs"
+      REPOSITORY: "ghcr.io/reticulalabs"
       NAME: "reticulum-router"
     name: Build reticulum-router container
     runs-on: ubuntu-latest
