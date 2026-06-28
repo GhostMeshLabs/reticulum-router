@@ -436,7 +436,8 @@ fn get_operating_identity(
     if let Some(input) = &args.import_pub {
         let bytes = decode_identity_input(input, PUBLIC_KEY_LENGTH * 2, true)?;
         let identity =
-            Identity::new_from_slices(&bytes[..PUBLIC_KEY_LENGTH], &bytes[PUBLIC_KEY_LENGTH..]);
+            Identity::new_from_slices(&bytes[..PUBLIC_KEY_LENGTH], &bytes[PUBLIC_KEY_LENGTH..])
+                .map_err(|e| (R_INVALID_IDENTITY, format!("Could not create identity: {e}")))?;
         return Ok(Some(WorkingIdentity::Public(identity)));
     }
 
@@ -941,7 +942,8 @@ fn validate_rsg(
         return err(R_INVALID_SIGNATURE, "Invalid signature");
     }
     let signing_identity =
-        Identity::new_from_slices(&pubkey[..PUBLIC_KEY_LENGTH], &pubkey[PUBLIC_KEY_LENGTH..]);
+        Identity::new_from_slices(&pubkey[..PUBLIC_KEY_LENGTH], &pubkey[PUBLIC_KEY_LENGTH..])
+            .map_err(|_| (R_INVALID_SIGNATURE, "Invalid signature".to_string()))?;
 
     if let Some(required) = required {
         if signing_identity.address_hash.as_slice() != required.identity_hash() {

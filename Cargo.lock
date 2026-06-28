@@ -1065,9 +1065,9 @@ dependencies = [
 
 [[package]]
 name = "reticulum-sdk"
-version = "2.0.6"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f111864d9a3488bb9d059baedc0592168fcfe738ce4d5c56561367c2b05de0b"
+checksum = "6a1b45127c82ac9ec17c802770e08d9b0bc718b1c8dc66e5e2df05db873b0920"
 dependencies = [
  "aes",
  "cbc",
@@ -1085,6 +1085,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "subtle",
  "tokio",
  "tokio-serial",
  "tokio-stream",
