@@ -78,13 +78,14 @@ pub enum InterfaceConfig {
         enabled: bool,
         #[serde(alias = "listen_ip")]
         bind_host: String,
-        #[serde(alias = "listen_port")]
+        #[serde(default = "default_port", alias = "listen_port")]
         bind_port: u16,
     },
     TCPClientInterface {
         #[serde(default = "default_true", alias = "interface_enabled")]
         enabled: bool,
         target_host: String,
+        #[serde(default = "default_port")]
         target_port: u16,
         #[serde(default)]
         transport_identity: String,
@@ -92,15 +93,18 @@ pub enum InterfaceConfig {
     BackboneInterface {
         #[serde(default = "default_true", alias = "interface_enabled")]
         enabled: bool,
-        #[serde(alias = "listen_ip")]
-        bind_host: String,
-        #[serde(alias = "listen_port")]
-        bind_port: u16,
+        #[serde(default = "default_port", alias = "target_port", alias = "bind_port")]
+        port: u16,
+        #[serde(default, alias = "listen_on", alias = "listen_ip")]
+        bind_host: Option<String>,
+        #[serde(default, alias = "remote")]
+        target_host: Option<String>,
     },
     UDPInterface {
         #[serde(default = "default_true", alias = "interface_enabled")]
         enabled: bool,
         listen_ip: String,
+        #[serde(default = "default_port")]
         listen_port: u16,
         forward_ip: String,
         forward_port: u16,
@@ -216,6 +220,9 @@ fn default_true() -> bool {
 }
 fn default_false() -> bool {
     false
+}
+fn default_port() -> u16 {
+    4242
 }
 fn default_shared_port() -> u16 {
     37428

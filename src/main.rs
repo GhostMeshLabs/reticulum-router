@@ -7,7 +7,7 @@ use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
-use reticulum_sdk::iface::backbone::BackboneServer;
+use reticulum_sdk::iface::backbone::{BackboneServer, BackboneClient};
 use reticulum_sdk::iface::udp::UdpInterface;
 use reticulum_sdk::transport::{
     DiscoveryInterfaceConfig, Transport, TransportConfig, TransportMetrics,
@@ -179,36 +179,69 @@ impl Daemon {
                 }
                 InterfaceConfig::BackboneInterface {
                     bind_host,
-                    bind_port,
+                    target_host,
+                    port,
                     ..
                 } => {
-                    let addr = format!("{}:{}", bind_host, bind_port);
-                    log::info!(
-                        "Enabling interface '{}': Backbone on {}",
-                        iface.name,
-                        addr
-                    );
-                    let iface_addr = iface_manager.lock().await.spawn(
-                        BackboneServer::new(addr, iface_manager.clone()),
-                        BackboneServer::spawn,
-                    );
-                    if iface.discoverable {
-                        // XXX: If reachable_on is None, we should check external IP somehow
-                        let (reachable_host, reachable_port) = match iface.reachable_on {
-                            Some(addr) => split_host_port(&addr)?,
-                            None => (bind_host, bind_port),
-                        };
-                        let mut discovery_config = DiscoveryInterfaceConfig::backbone(
-                            iface.name,
-                            reachable_host,
-                            reachable_port,
+                    if (bind_host.is_some() && target_host.is_some())
+                        || (bind_host.is_none() && target_host.is_none()) {
+                        log::error!(
+                            "'{}': BackboneInterface need a bind_host *or* a target_host",
+                            iface.name
                         );
-                        discovery_config.height = iface.height;
-                        discovery_config.latitude = iface.latitude;
-                        discovery_config.longitude = iface.longitude;
-                        transport
-                            .register_discoverable_interface(iface_addr, discovery_config)
-                            .await;
+                        continue;
+                    }
+
+                    // If this is a BackboneServer
+                    match bind_host {
+                        Some(host) => {
+                            let addr = format!("{}:{}", host, port);
+                            log::info!(
+                                "Enabling interface '{}': Backbone Server on {}",
+                                iface.name,
+                                addr
+                            );
+                            let iface_addr = iface_manager.lock().await.spawn(
+                                BackboneServer::new(addr, iface_manager.clone()),
+                                BackboneServer::spawn,
+                            );
+                            if iface.discoverable {
+                                // XXX: If reachable_on is None, we should check external IP somehow
+                                let (reachable_host, reachable_port) = match iface.reachable_on {
+                                    Some(addr) => split_host_port(&addr)?,
+                                    None => (host, port),
+                                };
+                                let mut discovery_config = DiscoveryInterfaceConfig::backbone(
+                                    &iface.name,
+                                    reachable_host,
+                                    reachable_port,
+                                );
+                                discovery_config.height = iface.height;
+                                discovery_config.latitude = iface.latitude;
+                                discovery_config.longitude = iface.longitude;
+                                transport
+                                    .register_discoverable_interface(iface_addr, discovery_config)
+                                    .await;
+                            }
+                        }
+                        None => ()
+                    }
+
+                    // If this is a BackboneClient
+                    match target_host {
+                        Some(host) => {
+                            let addr = format!("{}:{}", host, port);
+                            log::info!(
+                                "Enabling interface '{}': Backbone Client on {}",
+                                iface.name,
+                                addr
+                            );
+                            iface_manager
+                                .lock()
+                                .await
+                                .spawn(BackboneClient::new(addr), BackboneClient::spawn);
+                        }
+                        None => ()
                     }
                 }
                 InterfaceConfig::UDPInterface {
