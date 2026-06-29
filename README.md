@@ -120,7 +120,7 @@ target_port = 4242
 ## Compiling Source Code
 
 ```
-$ git clone https://github.com/GhostMeshLabs/reticulum-router.git && cd reticulum-router
+$ git clone https://github.com/ReticulaLabs/reticulum-router.git && cd reticulum-router
 $ cargo build --release
 ```
 
@@ -129,8 +129,8 @@ $ cargo build --release
 > Linux, Alpine based x86_64 and aarch64 containers are available
 
 ```
-docker pull ghcr.io/ghostmeshlabs/reticulum-router:v1.3.5
-docker run -v reticulum_data:/root/.config/reticulum ghcr.io/ghostmeshlabs/reticulum-router:v1.3.5
+docker pull ghcr.io/reticulalabs/reticulum-router:v1.6.0
+docker run -v reticulum_data:/root/.config/reticulum ghcr.io/reticulalabs/reticulum-router:v1.6.0
 ```
 
 /root/.config/reticulum will contain the following files:
