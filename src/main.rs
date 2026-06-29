@@ -197,7 +197,7 @@ impl Daemon {
                             Some(addr) => split_host_port(&addr)?,
                             None => (bind_host, bind_port),
                         };
-                        let mut discovery_config = DiscoveryInterfaceConfig::tcp_server(
+                        let mut discovery_config = DiscoveryInterfaceConfig::backbone(
                             iface.name,
                             reachable_host,
                             reachable_port,
