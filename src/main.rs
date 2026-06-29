@@ -7,6 +7,7 @@ use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
 use reticulum_sdk::iface::tcp_client::TcpClient;
 use reticulum_sdk::iface::tcp_server::TcpServer;
+use reticulum_sdk::iface::backbone::BackboneServer;
 use reticulum_sdk::iface::udp::UdpInterface;
 use reticulum_sdk::transport::{
     DiscoveryInterfaceConfig, Transport, TransportConfig, TransportMetrics,
@@ -188,8 +189,8 @@ impl Daemon {
                         addr
                     );
                     let iface_addr = iface_manager.lock().await.spawn(
-                        TcpServer::new(addr, iface_manager.clone()),
-                        TcpServer::spawn,
+                        BackboneServer::new(addr, iface_manager.clone()),
+                        BackboneServer::spawn,
                     );
                     if iface.discoverable {
                         // XXX: If reachable_on is None, we should check external IP somehow
