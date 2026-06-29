@@ -109,6 +109,7 @@ impl Daemon {
             let enabled = match &iface.config {
                 InterfaceConfig::TCPServerInterface { enabled, .. } => *enabled,
                 InterfaceConfig::TCPClientInterface { enabled, .. } => *enabled,
+                InterfaceConfig::BackboneInterface { enabled, .. } => *enabled,
                 InterfaceConfig::UDPInterface { enabled, .. } => *enabled,
                 InterfaceConfig::AutoInterface { enabled, .. } => *enabled,
                 InterfaceConfig::I2PInterface { enabled, .. } => *enabled,
@@ -174,6 +175,40 @@ impl Daemon {
                         .lock()
                         .await
                         .spawn(TcpClient::new(addr), TcpClient::spawn);
+                }
+                InterfaceConfig::BackboneInterface {
+                    bind_host,
+                    bind_port,
+                    ..
+                } => {
+                    let addr = format!("{}:{}", bind_host, bind_port);
+                    log::info!(
+                        "Enabling interface '{}': Backbone on {}",
+                        iface.name,
+                        addr
+                    );
+                    let iface_addr = iface_manager.lock().await.spawn(
+                        TcpServer::new(addr, iface_manager.clone()),
+                        TcpServer::spawn,
+                    );
+                    if iface.discoverable {
+                        // XXX: If reachable_on is None, we should check external IP somehow
+                        let (reachable_host, reachable_port) = match iface.reachable_on {
+                            Some(addr) => split_host_port(&addr)?,
+                            None => (bind_host, bind_port),
+                        };
+                        let mut discovery_config = DiscoveryInterfaceConfig::tcp_server(
+                            iface.name,
+                            reachable_host,
+                            reachable_port,
+                        );
+                        discovery_config.height = iface.height;
+                        discovery_config.latitude = iface.latitude;
+                        discovery_config.longitude = iface.longitude;
+                        transport
+                            .register_discoverable_interface(iface_addr, discovery_config)
+                            .await;
+                    }
                 }
                 InterfaceConfig::UDPInterface {
                     listen_ip,

@@ -19,7 +19,7 @@ A pure, rust-based transport for the Reticulum network based largely on [reticul
 ### IP Network (LAN, WAN)
 
 * ❌ AutoInterface
-* ❌ BackboneInterface (Use TCPServerInterface instead for now)
+* ✅ BackboneInterface
 * ❌ I2PInterface
 * ✅ TCPClientInterface
 * ✅ TCPServerInterface (bind_host ::1 will allow dual-stack functionality)
@@ -91,7 +91,7 @@ enabled = false
 
 [[interfaces]]
 name = "Local"
-type = "TCPServerInterface"
+type = "BackboneInterface"
 enabled = true
 bind_host = "0.0.0.0"
 bind_port = 4242

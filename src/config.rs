@@ -89,6 +89,14 @@ pub enum InterfaceConfig {
         #[serde(default)]
         transport_identity: String,
     },
+    BackboneInterface {
+        #[serde(default = "default_true", alias = "interface_enabled")]
+        enabled: bool,
+        #[serde(alias = "listen_ip")]
+        bind_host: String,
+        #[serde(alias = "listen_port")]
+        bind_port: u16,
+    },
     UDPInterface {
         #[serde(default = "default_true", alias = "interface_enabled")]
         enabled: bool,
