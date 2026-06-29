@@ -533,6 +533,66 @@ fn render_prometheus_metrics(
         ));
     }
 
+    let counters = metrics.packets_received_by_type;
+    output.push_str("# HELP reticulum_transport_packets_received_total Total number of packets received by type.\n");
+    output.push_str("# TYPE reticulum_transport_packets_received_total gauge\n");
+    output.push_str(&format!("reticulum_transport_packets_received_total{{type=\"announce\"}} {}\n", counters.announce));
+    output.push_str(&format!("reticulum_transport_packets_received_total{{type=\"link_request\"}} {}\n", counters.link_request));
+    output.push_str(&format!("reticulum_transport_packets_received_total{{type=\"proof\"}} {}\n", counters.proof));
+    output.push_str(&format!("reticulum_transport_packets_received_total{{type=\"data\"}} {}\n", counters.data));
+
+    output.push_str("# HELP reticulum_transport_packets_dropped_duplicate_total Number of duplicate inbound packets dropped.\n");
+    output.push_str("# TYPE reticulum_transport_packets_dropped_duplicate_total gauge\n");
+    output.push_str(&format!("reticulum_transport_packets_dropped_duplicate_total {}\n", metrics.packets_dropped_duplicate));
+
+    output.push_str("# HELP reticulum_transport_announces_rate_limited_total Number of announces blocked by the rate limiter.\n");
+    output.push_str("# TYPE reticulum_transport_announces_rate_limited_total gauge\n");
+    output.push_str(&format!("reticulum_transport_announces_rate_limited_total {}\n", metrics.announces_rate_limited));
+
+    output.push_str("# HELP reticulum_transport_decryption_failures_total Number of packets that failed decryption.\n");
+    output.push_str("# TYPE reticulum_transport_decryption_failures_total gauge\n");
+    output.push_str(&format!("reticulum_transport_decryption_failures_total {}\n", metrics.decryption_failures));
+
+    output.push_str("# HELP reticulum_transport_announce_table_entries Number of entries in the announce retransmit table.\n");
+    output.push_str("# TYPE reticulum_transport_announce_table_entries gauge\n");
+    output.push_str(&format!("reticulum_transport_announce_table_entries {}\n", metrics.announce_table_entries));
+
+    output.push_str("# HELP reticulum_transport_link_table_entries Number of entries in the link forwarding table.\n");
+    output.push_str("# TYPE reticulum_transport_link_table_entries gauge\n");
+    output.push_str(&format!("reticulum_transport_link_table_entries {}\n", metrics.link_table_entries));
+
+    output.push_str("# HELP reticulum_transport_reverse_table_entries Number of entries in the reverse path table.\n");
+    output.push_str("# TYPE reticulum_transport_reverse_table_entries gauge\n");
+    output.push_str(&format!("reticulum_transport_reverse_table_entries {}\n", metrics.reverse_table_entries));
+
+    output.push_str("# HELP reticulum_transport_packet_cache_entries Number of entries in the duplicate packet cache.\n");
+    output.push_str("# TYPE reticulum_transport_packet_cache_entries gauge\n");
+    output.push_str(&format!("reticulum_transport_packet_cache_entries {}\n", metrics.packet_cache_entries));
+
+    output.push_str("# HELP reticulum_transport_active_out_links Number of outbound links currently in Active state.\n");
+    output.push_str("# TYPE reticulum_transport_active_out_links gauge\n");
+    output.push_str(&format!("reticulum_transport_active_out_links {}\n", metrics.active_out_links));
+
+    output.push_str("# HELP reticulum_transport_active_in_links Number of inbound links currently in Active state.\n");
+    output.push_str("# TYPE reticulum_transport_active_in_links gauge\n");
+    output.push_str(&format!("reticulum_transport_active_in_links {}\n", metrics.active_in_links));
+
+    output.push_str("# HELP reticulum_transport_total_out_links Total number of outbound link entries.\n");
+    output.push_str("# TYPE reticulum_transport_total_out_links gauge\n");
+    output.push_str(&format!("reticulum_transport_total_out_links {}\n", metrics.total_out_links));
+
+    output.push_str("# HELP reticulum_transport_total_in_links Total number of inbound link entries.\n");
+    output.push_str("# TYPE reticulum_transport_total_in_links gauge\n");
+    output.push_str(&format!("reticulum_transport_total_in_links {}\n", metrics.total_in_links));
+
+    output.push_str("# HELP reticulum_transport_active_interfaces Number of non-cancelled interfaces registered with the transport.\n");
+    output.push_str("# TYPE reticulum_transport_active_interfaces gauge\n");
+    output.push_str(&format!("reticulum_transport_active_interfaces {}\n", metrics.active_interfaces));
+
+    output.push_str("# HELP reticulum_transport_pending_path_requests Number of pending path requests.\n");
+    output.push_str("# TYPE reticulum_transport_pending_path_requests gauge\n");
+    output.push_str(&format!("reticulum_transport_pending_path_requests {}\n", metrics.pending_path_requests));
+
     output.push_str("# HELP reticulum_transport_metrics_last_collection_timestamp_seconds Unix timestamp of the last successful transport metrics collection.\n");
     output.push_str("# TYPE reticulum_transport_metrics_last_collection_timestamp_seconds gauge\n");
     if let Some(collected_at_seconds) = collected_at_seconds {
