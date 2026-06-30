@@ -137,6 +137,13 @@ docker run -v reticulum_data:/root/.config/reticulum ghcr.io/reticulalabs/reticu
   * identity - Node identity
   * config.toml - Example basic node configuration
 
+# Metrics
+
+reticulum-router optionally offers a standard Prometheus /metrics endpoint to give insights to
+witnessed Reticulum network activity
+
+<img src="docs/metrics.png" width=480>
+
 # Projects implemented over Reticulum
 
 * [Nomad Network](https://unsigned.io/software/Nomad_Network.html) - A smol web based on lightweight web pages run over Reticulum
