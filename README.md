@@ -44,8 +44,6 @@ A pure, rust-based transport for the Reticulum network based largely on [reticul
 
 The Reticulum Router Daemon will automatically convert any existing non-standard Python rnsd configurations to standard toml config files.
 
-> Not all interface types are supported yet! Just TCPServerInterface,TCPClientInterface,UDPInterface,RNodeInterface
-
 ## Differences from rnsd configuration
 
 * toml
@@ -130,8 +128,8 @@ $ cargo build --release
 > Linux, Alpine based x86_64 and aarch64 containers are available
 
 ```
-docker pull ghcr.io/reticulalabs/reticulum-router:v1.6.0
-docker run -v reticulum_data:/root/.config/reticulum ghcr.io/reticulalabs/reticulum-router:v1.6.0
+docker pull ghcr.io/reticulalabs/reticulum-router:v1.6.1
+docker run -v reticulum_data:/root/.config/reticulum ghcr.io/reticulalabs/reticulum-router:v1.6.1
 ```
 
 /root/.config/reticulum will contain the following files:
