@@ -33,6 +33,10 @@ pub struct ReticulumConfig {
     pub respond_to_probes: bool,
     #[serde(default)]
     pub rpc_key: Option<String>,
+    #[serde(default)]
+    pub blackhole_sources: Option<String>,
+    #[serde(default)]
+    pub blackhole_update_interval: u64,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -260,6 +264,8 @@ impl Default for ReticulumConfig {
             rpc_key: None,
             panic_on_interface_error: false,
             respond_to_probes: false,
+            blackhole_update_interval: 60,
+            blackhole_sources: None,
         }
     }
 }

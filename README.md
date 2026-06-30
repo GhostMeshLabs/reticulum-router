@@ -10,7 +10,8 @@ A pure, rust-based transport for the Reticulum network based largely on [reticul
 * ✅ rnstransport probe (aka respond_to_probes)
 * ✅ rnstransport discovery (aka discoverable)
 * ❌ rnstransport remote.management (aka enable_remote_management)
-* ❌ info blackhole (aka publish_blackhole)
+* ✅ blackhole list sourcing (aka blackhole_sources)
+* ✅ info blackhole (aka publish_blackhole)
 
 ## Implemented interfaces
 

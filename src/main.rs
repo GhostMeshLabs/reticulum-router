@@ -2,6 +2,7 @@ mod config;
 
 use config::{Config, InterfaceConfig, MetricsConfig};
 use rand::rngs::OsRng;
+use reticulum_sdk::hash::AddressHash;
 use reticulum_sdk::identity::PrivateIdentity;
 use reticulum_sdk::iface::modem73::Modem73Interface;
 use reticulum_sdk::iface::rnode::{RNodeConfig, RNodeInterface};
@@ -100,6 +101,23 @@ impl Daemon {
 
             // Destinations
             cfg.set_respond_to_probes(config.reticulum.respond_to_probes);
+
+            // Blackhole Sources
+            let mut blackhole_sources: Vec<AddressHash> = Vec::new();
+            match config.reticulum.blackhole_sources {
+                Some(sources) => {
+                    for source in sources.split(",") {
+                        log::trace!("Setup blackhole source {}", source);
+                        blackhole_sources.push(AddressHash::new_from_hex_string(source.trim()).expect("valid hash"));
+                    }
+                }
+                None => {}
+            }
+            if blackhole_sources.len() > 0 {
+              cfg.set_blackhole_sources(blackhole_sources);
+              cfg.set_blackhole_update_interval(Duration::from_mins(config.reticulum.blackhole_update_interval));
+            }
+
             cfg
         });
 
