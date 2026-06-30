@@ -8,6 +8,7 @@ RUN cargo build -r
 FROM docker.io/alpine:3.23
 COPY --from=BUILD /tmp/src/target/release/reticulum-router /usr/local/bin/reticulum-router
 COPY --from=BUILD /tmp/src/target/release/rnid /usr/local/bin/rnid
+COPY --from=BUILD /tmp/src/target/release/rnpath /usr/local/bin/rnpath
 ENTRYPOINT "/usr/local/bin/reticulum-router"
 EXPOSE 4242/tcp
 EXPOSE 4242/udp
