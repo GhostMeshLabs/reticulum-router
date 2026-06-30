@@ -611,6 +611,13 @@ fn render_prometheus_metrics(
     output.push_str("# TYPE reticulum_transport_pending_path_requests gauge\n");
     output.push_str(&format!("reticulum_transport_pending_path_requests {}\n", metrics.pending_path_requests));
 
+    output.push_str("# HELP reticulum_transport_blackhole_entries Number of entries in the blackhole table.\n");
+    output.push_str("# TYPE reticulum_transport_blackhole_entries gauge\n");
+    output.push_str(&format!(
+        "reticulum_transport_blackhole_entries {}\n",
+        metrics.blackhole_entries
+    ));
+
     output.push_str("# HELP reticulum_transport_metrics_last_collection_timestamp_seconds Unix timestamp of the last successful transport metrics collection.\n");
     output.push_str("# TYPE reticulum_transport_metrics_last_collection_timestamp_seconds gauge\n");
     if let Some(collected_at_seconds) = collected_at_seconds {
