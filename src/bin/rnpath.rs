@@ -173,7 +173,6 @@ fn validate_args(args: &Args) -> Result<(), String> {
         args.blackholed,
         args.blackhole,
         args.unblackhole,
-        args.destination.is_some(),
     ]
     .iter()
     .filter(|x| **x)
